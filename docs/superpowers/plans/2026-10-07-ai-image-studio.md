@@ -2579,3 +2579,22 @@ git commit -m "chore: 部署配置"
 - 首页示例图仍是程序生成的占位图，等有真实出图能力后替换
 
 11. 生图层从 lib/openai/generate-image.ts 迁到 lib/image/generate-image.ts，改为按 IMAGE_PROVIDER 环境变量在 OpenAI 与火山方舟之间切换。原因是 OpenAI 按 IP 归属地拒绝中国大陆访问，platform.openai.com 直接返回 Cloudflare 403，无法注册并创建密钥；火山方舟等国内服务的接口是 OpenAI 兼容格式，可以直连。方舟分支额外传 watermark: false，并把内部画幅尺寸换算成方舟支持的档位。
+
+12. 生图层迁移到 `lib/image/generate-image.ts`，按 `IMAGE_PROVIDER` 在 OpenAI 与火山方舟之间切换。OpenAI 按 IP 归属地拒绝中国大陆访问，`platform.openai.com` 返回 Cloudflare 403，无法注册并创建密钥。
+13. 火山方舟分支额外发送 `output_format: "png"` 与 `watermark: false`；方舟默认加水印且默认输出 JPEG，不加这两个参数会导致存储内容与文件名、Content-Type 不一致。
+14. 内部画幅换算成方舟尺寸：`1024x1024` 原样，`1536x1024` 换成 `1152x864`，`1024x1536` 换成 `864x1152`。实测输出尺寸与请求完全一致。
+15. 方舟的模型名不能用记忆中的版本。实测 `doubao-seedream-3-0-t2i-250415` 已下线（Shutdown），`doubao-seedream-4-0-20260415` 与 `doubao-seedream-5-0-flash-260915` 未开通，账号可用的只有 `doubao-seedream-5-0-pro-260628`，已设为默认。
+
+### 火山方舟实测（2026-10-07）
+
+| 项 | 结果 |
+| --- | --- |
+| 接口 | `POST https://ark.cn-beijing.volces.com/api/v3/images/generations` |
+| 鉴权 | `Authorization: Bearer <ARK_API_KEY>` |
+| 取模型列表 | `GET /api/v3/models` 可用，返回平台全部模型的 id 与 status |
+| 返回结构 | `{ model, created, data: [{ url, size, output_format }], usage }` |
+| 中文提示词 | 端到端正常，生成的图片与中文主体一致 |
+| 单张耗时 | 竖图 27 秒，横图 47 秒 |
+| 图片体积 | 1.0 到 2.2 MB（1024x1024 PNG） |
+
+注意：方舟未开通的模型返回 HTTP 404 与 `ModelNotOpen`，不是 403，排查时不要被状态码误导。另外 PowerShell 5.1 的 `Invoke-WebRequest` 默认按 ANSI 编码发送请求体，用它测试中文请求会全部变成问号，需要显式传 UTF-8 字节。

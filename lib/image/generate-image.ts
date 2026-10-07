@@ -11,7 +11,7 @@ export type ImageConfig = {
 };
 
 export const OPENAI_DEFAULT_MODEL = "gpt-image-1";
-export const ARK_DEFAULT_MODEL = "doubao-seedream-3-0-t2i-250415";
+export const ARK_DEFAULT_MODEL = "doubao-seedream-5-0-pro-260628";
 
 // 火山方舟不接受我们内部的画幅尺寸，按它支持的档位换算。
 const ARK_SIZE: Record<string, string> = {
@@ -138,6 +138,7 @@ async function generateWithArk(
       prompt: params.prompt,
       size: ARK_SIZE[params.size] ?? "1024x1024",
       response_format: "url",
+      output_format: "png",
       watermark: false,
     }),
   });
