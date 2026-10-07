@@ -2536,3 +2536,44 @@ git commit -m "chore: 部署配置"
 1. GPTImage 的尺寸取值与返回字段需要在实际动手前核对，见 Task 13 第 1 步。核对不通过时先改设计文档。
 2. 中档画质在 Vercel 函数时长上限内的成功率需要实测。若失败率偏高，需要评估升级套餐或改成异步任务，这会成为一份新的设计文档。
 3. 每个新账号消耗 5 次模型调用，上线前需要评估是否加更严格的频率限制。当前只依赖 Supabase 自带的鉴权，没有额外的单账号限流。
+---
+
+## 实施记录（2026-10-07）
+
+执行方式：本会话内联执行（executing-plans），分支 `feat/ai-image-studio-v1`。
+
+### 与计划的偏差
+
+1. 脚手架先在临时目录生成再复制进项目。目录名 `AI 应用生成APP` 不是合法 npm 包名，`create-next-app` 拒绝在当前目录初始化，包名改为 `ai-image-studio`。
+2. 实际安装的是 Next.js 16.3.8，不是计划里写的 15。按项目内 AGENTS.md 的要求先读了 `node_modules/next/dist/docs/` 里版本匹配的文档，确认 `maxDuration` 仍可用、`params` 与 `cookies()` 必须异步访问，计划中的写法已符合。
+3. 新增 `proxy.ts`。计划写的是不做 middleware，但 Next 16 把 middleware 改名为 proxy，且 Supabase 会话刷新依赖它；没有它时 `cookies()` 在服务端组件里无法写入，会话闲置后会失效。
+4. shadcn/ui 实际安装的是 Base UI 版本，`Button` 没有 `asChild`，改用导出的 `buttonVariants()` 给链接套样式。
+5. `lib/i18n/dictionary.ts` 的基准字典去掉了 `as const`。字面量类型会让英文文案无法赋值给 `Dictionary`。
+6. `lib/prompt/build.ts` 的 `pick()` 改成泛型，否则比例选项会丢失 `size` 字段。
+7. `lib/openai/generate-image.ts` 增加开发环境占位图分支：没有 `OPENAI_API_KEY` 时返回程序生成的 PNG，生产环境直接报错，避免假图流到线上。
+8. `lib/env.ts` 不再强制要求 `OPENAI_API_KEY`，改由生图模块在真正调用时检查。
+9. `lib/supabase/server.ts` 与 `admin.ts` 在缺环境变量时抛出带指引的错误，而不是让底层库抛出难懂信息。
+10. 计划里的 `reserve_credit` 被 `start_generation` 取代，扣分与建记录合并在一个事务里，设计文档第 5.4 与第 7 节已同步。
+
+### 已验证项
+
+| 检查项 | 结果 |
+| --- | --- |
+| `pnpm exec tsc --noEmit` | 通过 |
+| `pnpm test` | 11 个用例通过 |
+| `pnpm build` | 通过，全部路由动态渲染，Proxy 已注册 |
+| 未登录访问 `/zh/studio` | 307 跳转登录页 |
+| 注册新账号 | profiles 自动创建，credits=5，signup_bonus 流水 1 条 |
+| 连续生成 5 次 | 每次 200，credits 依次递减到 0，每次 1 条 generation 流水 |
+| 第 6 次生成 | 402 insufficient_credits，不产生任何记录 |
+| 生成结果 | Storage 中是合法 PNG，尺寸与所选比例一致，status=succeeded 且 storage_path 非空 |
+| 历史页 | 200，渲染出图片、签名地址与提示词 |
+| 对账接口未授权 | 401 |
+| 对账接口授权 | 卡死记录被退款，credits 回到 1，status 变 failed，refund 流水 1 条 |
+| 行级安全 | 另一账号读取 generations 得到 0 行，只能读到自己的 profile 与流水 |
+
+### 尚未验证
+
+- 真实调用 OpenAI 出图（当前没有 API key，走的是占位图分支）
+- Vercel 线上部署与线上 Cron
+- 首页示例图仍是程序生成的占位图，等有真实出图能力后替换

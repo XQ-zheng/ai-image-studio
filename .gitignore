@@ -43,3 +43,6 @@ next-env.d.ts
 
 # workbuddy local memory
 .workbuddy/
+
+# supabase cli
+supabase/.temp/
