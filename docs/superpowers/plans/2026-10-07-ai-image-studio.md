@@ -677,7 +677,7 @@ export type BuiltPrompt = {
   options: PromptInput;
 };
 
-function pick(list: OptionItem[], id: string, group: string): OptionItem {
+function pick<T extends OptionItem>(list: T[], id: string, group: string): T {
   const found = list.find((item) => item.id === id);
   if (!found) {
     throw new Error(`未知的${group}选项: ${id}`);
@@ -902,7 +902,7 @@ const zh = {
     close: "知道了",
     comingSoon: "即将开放",
   },
-} as const;
+};
 
 export type Dictionary = typeof zh;
 
