@@ -3,7 +3,7 @@ import { assertServerEnv } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { buildPrompt, type PromptInput } from "@/lib/prompt/build";
-import { generateImage } from "@/lib/openai/generate-image";
+import { generateImage } from "@/lib/image/generate-image";
 import {
   createSignedImageUrl,
   uploadGenerationImage,

@@ -77,8 +77,7 @@ components/
   ui/                        shadcn/ui 基础组件
 lib/
   prompt/                    提示词组装（纯函数）与选项字典
-  credits/                   积分记账（只调 Postgres 函数）
-  openai/                    GPTImage 调用封装
+  image/                     生图调用封装（OpenAI 与火山方舟，按环境变量切换）
   storage/                   Supabase Storage 上传
   i18n/                      中英文字典与语言读取
   supabase/                  客户端与服务端 Supabase 实例

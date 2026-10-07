@@ -36,7 +36,7 @@
 | lib/supabase/admin.ts | service role 客户端，仅服务端可导入 |
 | lib/prompt/catalog.ts | 五组选项字典与查找函数 |
 | lib/prompt/build.ts | 纯函数：把选项拼装成提示词 |
-| lib/openai/generate-image.ts | GPTImage 调用封装，返回图片二进制 |
+| lib/image/generate-image.ts | 生图调用封装（OpenAI 与火山方舟），返回图片二进制 |
 | lib/storage/upload.ts | 上传图片到 Storage 并生成签名 URL |
 | lib/i18n/index.ts | 语言读取与字典查找 |
 | lib/i18n/dictionary.ts | 中英文文案字典 |
@@ -2577,3 +2577,5 @@ git commit -m "chore: 部署配置"
 - 真实调用 OpenAI 出图（当前没有 API key，走的是占位图分支）
 - Vercel 线上部署与线上 Cron
 - 首页示例图仍是程序生成的占位图，等有真实出图能力后替换
+
+11. 生图层从 lib/openai/generate-image.ts 迁到 lib/image/generate-image.ts，改为按 IMAGE_PROVIDER 环境变量在 OpenAI 与火山方舟之间切换。原因是 OpenAI 按 IP 归属地拒绝中国大陆访问，platform.openai.com 直接返回 Cloudflare 403，无法注册并创建密钥；火山方舟等国内服务的接口是 OpenAI 兼容格式，可以直连。方舟分支额外传 watermark: false，并把内部画幅尺寸换算成方舟支持的档位。
